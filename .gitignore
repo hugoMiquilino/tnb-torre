@@ -1,0 +1,6 @@
+# Folders
+src/modules/__pycache__/*
+venv/*
+
+# Files
+.env
