@@ -1,6 +1,9 @@
 # Folders
-src/modules/__pycache__/*
+src/modules/__pycache__
+src/logs
 venv/*
 
 # Files
+*.xlsx
+*.csv
 .env
