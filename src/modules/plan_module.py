@@ -16,8 +16,6 @@ def collector():
     data = data.fillna("").apply(lambda x: x.str.strip() if x.dtype == "object" else x)
     df = data[~data["Motorista"].isin(["", "Sem Motorista"])]
 
-    print(df.to_string())
-
     return df
 
 

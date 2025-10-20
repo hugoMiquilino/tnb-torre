@@ -26,12 +26,10 @@ def setup():
 
     service = Service(log_path=os.devnull)
 
-    print("Iniciando o browser...")
     return webdriver.Chrome(service=service, options=chrome_options)
 
 
 def teardown(driver):
-    print("Encerrando o browser...")
     driver.quit()
 
 
@@ -61,6 +59,8 @@ def collector():
         sleep(1)
 
         Select(driver.find_element(By.ID, "pageLength")).select_by_visible_text("100")
+
+        sleep(3)
 
         complete_table = []
         rows = driver.find_elements(
@@ -100,13 +100,13 @@ def transform_data(data):
                 "-",
                 "Conta",
                 "Divisão",
-                "Cavalo",
+                "Veiculo",
                 "Operador",
                 "Data",
                 "Evento",
                 "Velocidade",
                 "Local",
-                "Lg",
+                "Status",
                 "Rota",
                 "Hodometro",
                 "Horimetro",
@@ -116,10 +116,10 @@ def transform_data(data):
                 "Bateria Interna",
             ],
         )
-        df = df[["Cavalo", "Velocidade", "Lg", "Local"]]
+        df = df[["Veiculo", "Velocidade", "Status", "Local"]]
 
-        df["Cavalo"] = df["Cavalo"].str[:3] + " " + df["Cavalo"].str[3:]
-        df["Cavalo"] = df["Cavalo"].str.rstrip("-")
+        df["Veiculo"] = df["Veiculo"].str[:3] + " " + df["Veiculo"].str[3:]
+        df["Veiculo"] = df["Veiculo"].str.rstrip("-")
 
         df["Velocidade"] = (
             df["Velocidade"].str.replace(" km/h", "").str.replace(",", ".").astype(int)
@@ -147,7 +147,7 @@ def transform_data(data):
 
         df = converter(df, load_json("src/docs/conversion_dict.json"))
 
-        df = df.drop_duplicates(subset="Cavalo")
+        df = df.drop_duplicates(subset="Veiculo")
 
         return df
 
@@ -175,6 +175,3 @@ def sti_module():
     df = transform_data(df)
 
     return df
-    
-    
-print(sti_module())
