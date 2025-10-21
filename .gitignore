@@ -1,4 +1,5 @@
 # Folders
+.vscode/
 src/modules/__pycache__
 src/logs
 venv/*
