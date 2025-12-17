@@ -1,8 +1,9 @@
 # Folders
-.vscode/
-src/modules/__pycache__
-src/logs
-venv/*
+/.vscode/
+/*/__pycache__
+/*/*/__pycache__
+/src/logs/*.log
+/venv/*
 
 # Files
 *.xlsx
