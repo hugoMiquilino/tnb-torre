@@ -4,6 +4,7 @@ from selenium.webdriver.support.ui import Select
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 from selenium import webdriver
+from datetime import datetime, timedelta
 from dotenv import load_dotenv
 from time import sleep
 import pandas as pd
@@ -43,13 +44,12 @@ def collector():
     passwd = os.getenv("PASSWD")
 
     try:
-        driver.get("https://svc2.stirastreamento.com.br/portal/Login")
+        driver.get("https://serverca1.serveirc.com/Portal/Login")
         # assert "STI - Segurança, Logística e Telemetria" in driver.title
         sleep(1)
         driver.find_element(By.XPATH, '//*[@id="usuario"]').send_keys(user), sleep(0.2)
         driver.find_element(By.XPATH, '//*[@id="senha"]').send_keys(passwd, Keys.RETURN)
 
-        # assert "STI - Sistema de Gerenciamento" in driver.title
         sleep(1)
         driver.find_element(
             By.XPATH, "/html/body/div[6]/div[1]/div/div/div[1]/div/div[2]/div/a[1]"
@@ -69,14 +69,14 @@ def collector():
         for row in rows:
             columns = [col.text.strip() for col in row.find_elements(By.XPATH, ".//td")]
 
-            if len(columns) > 9:
+            if len(columns) > 10:
                 try:
-                    lg_element = row.find_element(By.XPATH, ".//td[10]/img")
+                    lg_element = row.find_element(By.XPATH, ".//td[11]/img")
                     alt_value = lg_element.get_attribute("alt")
 
-                    columns[9] = "\U0001f7e2" if alt_value == "Ligada" else "\U0001f518"
+                    columns[10] = "\U0001f7e2" if alt_value == "Ligada" else "\U0001f518"
                 except Exception:
-                    columns[9] = "\U0001f518"
+                    columns[10] = "\U0001f518"
 
             complete_table.append(columns)
 
@@ -102,6 +102,7 @@ def transform_data(data):
                 "Divisão",
                 "Veiculo",
                 "Operador",
+                "Matricula?",
                 "Data",
                 "Evento",
                 "Velocidade",
@@ -116,7 +117,11 @@ def transform_data(data):
                 "Bateria Interna",
             ],
         )
-        df = df[["Veiculo", "Velocidade", "Status", "Local"]]
+        
+        # print(df.to_string())
+
+        df = df[["Veiculo", "Data", "Velocidade", "Status", "Local"]]
+
 
         df["Veiculo"] = df["Veiculo"].str[:3] + " " + df["Veiculo"].str[3:]
         df["Veiculo"] = df["Veiculo"].str.rstrip("-")
@@ -152,7 +157,7 @@ def transform_data(data):
         return df
 
     else:
-        raise Exception(f"Erro: Dados inconsistentes, esperado 17 colunas, mas encontrado {len(data[0])} colunas")
+        raise Exception(f"Erro: Dados inconsistentes, esperado 18 colunas, mas encontrado {len(data[0])} colunas")
 
 
 def converter(df, conversion_dict):

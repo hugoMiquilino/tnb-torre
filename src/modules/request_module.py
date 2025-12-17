@@ -1,4 +1,5 @@
 from dotenv import load_dotenv
+from time import sleep
 import pandas as pd
 import requests
 import os
@@ -28,6 +29,7 @@ def data_modeling(df):
             "UF": "UF",
             "Status": "Status",
             "Velocidade": "Velocidade",
+            # "Data": "Data"
         },
     }
 
@@ -84,3 +86,5 @@ def request_module(df):
         else:
             print(f"rro ao enviar dados para {table_name}: {response.status_code}")
             print("Resposta da API:", response.text)
+
+        sleep(5)

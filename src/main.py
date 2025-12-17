@@ -1,12 +1,13 @@
 from modules import sti_module, plan_module, request_module
 from time import sleep
 import pandas as pd
-import logging # Implementar
-
+    
 def mainloop():
 
     sti_df = sti_module()
     plan_df = plan_module()
+
+    # print(f"{sti_df}\n\n")
 
     df = pd.merge(sti_df, plan_df, on="Veiculo", how="outer")
     df = df.iloc[:, 0:]
