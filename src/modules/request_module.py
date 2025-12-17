@@ -1,11 +1,13 @@
 from dotenv import load_dotenv
 from time import sleep
+import logging
 import pandas as pd
 import requests
 import os
 
 load_dotenv()
 
+logger = logging.getLogger("tnb")
 
 def build_rows(df, mapping):
     rows = []
@@ -60,9 +62,7 @@ def request_module(df):
             before = len(temp_df)
             temp_df = temp_df[temp_df[key_col].notnull()]
             after = len(temp_df)
-            print(
-                f"🧹 Removidas {before - after} linhas sem '{key_col}' antes do envio a {table_name}."
-            )
+            logger.info("🧹 Removidas {before - after} linhas sem '{key_col}' antes do envio a {table_name}.")
 
         # Converte NaN -> None para JSON
         temp_df = temp_df.where(pd.notnull(temp_df), None)
@@ -78,13 +78,14 @@ def request_module(df):
 
         payload = {"Action": action, "Rows": temp_df.to_dict(orient="records")}
 
-        print(f"→ Enviando {len(temp_df)} registros para {table_name}...")
+        logger.info(f"📤 Enviando {len(temp_df)} registros para {table_name}...")
 
         response = requests.post(url, headers=headers, json=payload)
+        
         if response.status_code == 200:
-            print(f"Dados enviados com sucesso para {table_name}!")
+            logger.info(f"✅ Dados enviados com sucesso para {table_name}!")
         else:
-            print(f"rro ao enviar dados para {table_name}: {response.status_code}")
-            print("Resposta da API:", response.text)
+            logger.warning(f"❌ Erro ao enviar dados para {table_name}: {response.status_code}")
+            logger.warning("Resposta da API:", response.text)
 
         sleep(5)
