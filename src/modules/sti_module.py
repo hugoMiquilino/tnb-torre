@@ -127,7 +127,7 @@ def transform_data(data):
         df["Veiculo"] = df["Veiculo"].str.rstrip("-")
 
         df["Velocidade"] = (
-            df["Velocidade"].str.replace(" km/h", "").str.replace(",", ".").astype(int)
+            df["Velocidade"].str.replace(" km/h", "").astype(str)
         )
 
         df["UF"] = df["Local"].apply(
