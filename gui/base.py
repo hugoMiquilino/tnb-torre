@@ -4,6 +4,12 @@ import tkinter as tk
 from ttkbootstrap.constants import *
 import ttkbootstrap as ttk
 from pathlib import Path
+import pystray
+from PIL import Image
+from pathlib import Path
+import threading
+
+icon_path = Path(__file__).parent / "assets" / "app.ico"
 
 class StatusGUI(ttk.Window):
     def __init__(self, queue):
@@ -17,8 +23,6 @@ class StatusGUI(ttk.Window):
         self.queue = queue
 
         # Icon
-        icon_path = Path(__file__).parent / "assets" / "app.ico"
-
         if icon_path.exists():
             self.iconbitmap(icon_path)
 
@@ -58,11 +62,15 @@ class StatusGUI(ttk.Window):
             btn_frame, text="❌ Encerrar", bootstyle=(DANGER, OUTLINE), command=self.close_app
         ).pack(side=RIGHT)
 
+        self.protocol("WM_DELETE_WINDOW", self.hide_window)
+
     def restart_app(self):
         python = sys.executable
         os.execl(python, python, *sys.argv)
 
     def close_app(self):
+        if hasattr(self, "tray_icon"):
+            self.tray_icon.stop()
         self.destroy()
         os._exit(0)
 
@@ -79,3 +87,43 @@ class StatusGUI(ttk.Window):
         self.log.insert("end", msg + "\n")
         self.log.see("end")
         self.log.config(state="disabled")
+
+    #Tray
+    def create_tray_icon(self):
+        if hasattr(self, "tray_icon"):
+            return
+        
+        image = Image.open(icon_path)
+
+        menu = pystray.Menu(
+            pystray.MenuItem("Abrir", self.show_window),
+            pystray.MenuItem("Sair", self.exit_app)
+        )
+
+        self.tray_icon = pystray.Icon(
+            "tnb_torre",
+            image,
+            "TNB Torre",
+            menu
+        )
+
+        threading.Thread(
+            target=self.tray_icon.run,
+            daemon=True
+        ).start()
+    
+    def hide_window(self):
+        self.withdraw()
+        self.create_tray_icon()
+        
+    def show_window(self, icon=None, item=None):
+        self.tray_icon.stop()
+        del self.tray_icon
+        self.deiconify()
+        self.lift()
+
+
+    def exit_app(self, icon=None, item=None):
+        if hasattr(self, "tray_icon"):
+            self.tray_icon.stop()
+        self.destroy()
