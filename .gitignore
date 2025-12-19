@@ -4,8 +4,11 @@
 /*/*/__pycache__
 /src/logs/*.log
 /venv/*
+/build
+/dist
 
 # Files
 *.xlsx
 *.csv
+*.spec
 .env
