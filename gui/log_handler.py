@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 
 class GuiLogHandler(logging.Handler):
     def __init__(self, queue):
@@ -6,5 +7,13 @@ class GuiLogHandler(logging.Handler):
         self.queue = queue
 
     def emit(self, record):
-        msg = self.format(record)
-        self.queue.put(msg)
+        try:
+            timestamp = datetime.fromtimestamp(record.created).strftime("%H:%M:%S")
+            level = record.levelname
+            msg = record.getMessage()
+
+            formatted = f"[{timestamp}] {msg}"
+            self.queue.put(formatted)
+
+        except Exception:
+            self.handleError(record)

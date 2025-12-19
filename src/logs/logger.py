@@ -2,15 +2,24 @@ import logging
 from logging.handlers import QueueHandler, QueueListener
 from queue import Queue
 from pathlib import Path
+import os
 
-LOG_DIR = Path(__file__).parent
-LOG_DIR.mkdir(exist_ok=True)
+
+def get_log_dir():
+    base = Path(os.getenv("LOCALAPPDATA", Path.home()))
+    log_dir = base / "TNB-Torre" / "logs"
+    log_dir.mkdir(parents=True, exist_ok=True)
+    return log_dir
+
 
 def setup_logger():
     log_queue = Queue()
 
+    log_dir = get_log_dir()
+    log_file = log_dir / "tnb_torre.log"
+
     file_handler = logging.FileHandler(
-        LOG_DIR / "tnb_torre.log",
+        log_file,
         encoding="utf-8"
     )
 
@@ -24,6 +33,7 @@ def setup_logger():
 
     logger = logging.getLogger("tnb")
     logger.setLevel(logging.INFO)
+    logger.handlers.clear()      # 🔥 evita handlers duplicados
     logger.addHandler(queue_handler)
 
     listener = QueueListener(log_queue, file_handler)
