@@ -44,7 +44,7 @@ def teardown(driver):
     driver.quit()
 
 
-def get_working_url(driver, timeout=10):
+def get_working_url(driver, timeout=60):
 
     STI_URLS = [
         "https://svc1.stirastreamento.com.br/Portal/Login",
@@ -60,13 +60,11 @@ def get_working_url(driver, timeout=10):
             # valida algo que SEMPRE existe na tela de login
             driver.find_element(By.ID, "usuario")
 
-            print(f"[STI] URL válida: {url}")
             logger.info(f"[STI] URL válida: {url}")
             return url
 
         except (WebDriverException, TimeoutException):
             logger.warning(f"[STI] URL indisponível: {url}")
-            print(f"[STI] URL indisponível: {url}")
             continue
 
     raise RuntimeError("Nenhuma URL da STI está disponível no momento")

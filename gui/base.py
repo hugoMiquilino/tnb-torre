@@ -16,7 +16,7 @@ class StatusGUI(ttk.Window):
         super().__init__(
             title="TNB Torre - Status",
             themename="darkly",
-            size=(700, 500),
+            size=(800, 500),
             resizable=(False, False),
         )
 
@@ -83,6 +83,7 @@ class StatusGUI(ttk.Window):
         self.after(200, self.poll_queue)
 
     def update_ui(self, msg):
+        
         self.status.config(text=msg)
 
         self.log.config(state="normal")
