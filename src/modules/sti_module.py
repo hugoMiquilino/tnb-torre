@@ -1,3 +1,6 @@
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import WebDriverException, TimeoutException
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import Select
@@ -6,11 +9,17 @@ from selenium.webdriver.common.by import By
 from selenium import webdriver
 from dotenv import load_dotenv
 from time import sleep
+import logging
 import pandas as pd
 import json
 import os
 
 from src.utils.path import resource_path
+from gui.base import StatusGUI
+from gui.log_handler import GuiLogHandler
+from src.logs.logger import setup_logger
+
+logger = logging.getLogger("tnb")
 
 def load_json(file_path):
     with open(file_path, "r", encoding="utf-8") as file:
@@ -20,10 +29,11 @@ def load_json(file_path):
 def setup():
 
     chrome_options = Options()
-    chrome_options.add_argument("--headless=new")
+    # chrome_options.add_argument("--headless=new")
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_experimental_option("detach", True)
     chrome_options.add_experimental_option("excludeSwitches", ["enable-logging"])
+    chrome_options.page_load_strategy = "eager"
 
     service = Service(log_path=os.devnull)
 
@@ -32,6 +42,34 @@ def setup():
 
 def teardown(driver):
     driver.quit()
+
+
+def get_working_url(driver, timeout=10):
+
+    STI_URLS = [
+        "https://svc1.stirastreamento.com.br/Portal/Login",
+        "https://serverca1.serveirc.com/Portal/Login",
+        "https://svc2.stirastreamento.com.br/portal/Login",
+    ]
+
+    for url in STI_URLS:
+        try:
+            driver.set_page_load_timeout(timeout)
+            driver.get(url)
+
+            # valida algo que SEMPRE existe na tela de login
+            driver.find_element(By.ID, "usuario")
+
+            print(f"[STI] URL válida: {url}")
+            logger.info(f"[STI] URL válida: {url}")
+            return url
+
+        except (WebDriverException, TimeoutException):
+            logger.warning(f"[STI] URL indisponível: {url}")
+            print(f"[STI] URL indisponível: {url}")
+            continue
+
+    raise RuntimeError("Nenhuma URL da STI está disponível no momento")
 
 
 def collector():
@@ -44,21 +82,25 @@ def collector():
     passwd = os.getenv("PASSWD")
 
     try:
-        driver.get("https://serverca1.serveirc.com/Portal/Login")
-        sleep(1)
+        wait = WebDriverWait(driver, 30)
+
+        url = get_working_url(driver)
+        
+        driver.get(url)
+        wait.until(EC.presence_of_element_located((By.ID, "usuario")))
         driver.find_element(By.XPATH, '//*[@id="usuario"]').send_keys(user), sleep(0.2)
         driver.find_element(By.XPATH, '//*[@id="senha"]').send_keys(passwd, Keys.RETURN)
 
-        sleep(1)
+        wait.until(EC.presence_of_element_located((By.CLASS_NAME, "shortcut")))
         driver.find_element(
             By.XPATH, "/html/body/div[6]/div[1]/div/div/div[1]/div/div[2]/div/a[1]"
         ).click()
 
-        sleep(1)
+        wait.until(EC.presence_of_element_located((By.XPATH, "/html/body/div[4]/div/div/div[2]/div[2]/div/table/tbody/tr[5]")))
 
         Select(driver.find_element(By.ID, "pageLength")).select_by_visible_text("100")
 
-        sleep(3)
+        sleep(.5)
 
         complete_table = []
         rows = driver.find_elements(
@@ -72,7 +114,9 @@ def collector():
                     lg_element = row.find_element(By.XPATH, ".//td[11]/img")
                     alt_value = lg_element.get_attribute("alt")
 
-                    columns[10] = "\U0001f7e2" if alt_value == "Ligada" else "\U0001f518"
+                    columns[10] = (
+                        "\U0001f7e2" if alt_value == "Ligada" else "\U0001f518"
+                    )
                 except Exception:
                     columns[10] = "\U0001f518"
 
@@ -81,7 +125,7 @@ def collector():
         return complete_table
 
     except Exception as e:
-        print(f"Erro ao extrair dados: {e}")
+        logger.warning(f"Falha ao extrair dados.")
 
     finally:
         teardown(driver)
@@ -115,18 +159,15 @@ def transform_data(data):
                 "Bateria Interna",
             ],
         )
-        
+
         # print(df.to_string())
 
         df = df[["Veiculo", "Data", "Velocidade", "Status", "Local"]]
 
-
         df["Veiculo"] = df["Veiculo"].str[:3] + " " + df["Veiculo"].str[3:]
         df["Veiculo"] = df["Veiculo"].str.rstrip("-")
 
-        df["Velocidade"] = (
-            df["Velocidade"].str.replace(" km/h", "").astype(str)
-        )
+        df["Velocidade"] = df["Velocidade"].str.replace(" km/h", "").astype(str)
 
         df["UF"] = df["Local"].apply(
             lambda loc: (
@@ -155,7 +196,9 @@ def transform_data(data):
         return df
 
     else:
-        raise Exception(f"Erro: Dados inconsistentes, esperado 18 colunas, mas encontrado {len(data[0])} colunas")
+        raise Exception(
+            f"Erro: Dados inconsistentes, esperado 18 colunas, mas encontrado {len(data[0])} colunas"
+        )
 
 
 def converter(df, conversion_dict):
