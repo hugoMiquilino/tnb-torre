@@ -65,8 +65,10 @@ class StatusGUI(ttk.Window):
         self.protocol("WM_DELETE_WINDOW", self.hide_window)
 
     def restart_app(self):
-        python = sys.executable
-        os.execl(python, python, *sys.argv)
+        import subprocess, sys, os
+
+        subprocess.Popen([sys.executable])
+        os._exit(0)
 
     def close_app(self):
         if hasattr(self, "tray_icon"):
@@ -121,7 +123,6 @@ class StatusGUI(ttk.Window):
         del self.tray_icon
         self.deiconify()
         self.lift()
-
 
     def exit_app(self, icon=None, item=None):
         if hasattr(self, "tray_icon"):

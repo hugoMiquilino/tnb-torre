@@ -4,13 +4,13 @@ from selenium.webdriver.support.ui import Select
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 from selenium import webdriver
-from datetime import datetime, timedelta
 from dotenv import load_dotenv
 from time import sleep
 import pandas as pd
 import json
 import os
 
+from src.utils.path import resource_path
 
 def load_json(file_path):
     with open(file_path, "r", encoding="utf-8") as file:
@@ -45,7 +45,6 @@ def collector():
 
     try:
         driver.get("https://serverca1.serveirc.com/Portal/Login")
-        # assert "STI - Segurança, Logística e Telemetria" in driver.title
         sleep(1)
         driver.find_element(By.XPATH, '//*[@id="usuario"]').send_keys(user), sleep(0.2)
         driver.find_element(By.XPATH, '//*[@id="senha"]').send_keys(passwd, Keys.RETURN)
@@ -55,7 +54,6 @@ def collector():
             By.XPATH, "/html/body/div[6]/div[1]/div/div/div[1]/div/div[2]/div/a[1]"
         ).click()
 
-        # assert "STI - Posições" in driver.title
         sleep(1)
 
         Select(driver.find_element(By.ID, "pageLength")).select_by_visible_text("100")
@@ -150,7 +148,7 @@ def transform_data(data):
 
         df["Local"] = df["Local"].str.title()
 
-        df = converter(df, load_json("src/docs/conversion_dict.json"))
+        df = converter(df, load_json(resource_path("src/docs/conversion_dict.json")))
 
         df = df.drop_duplicates(subset="Veiculo")
 
